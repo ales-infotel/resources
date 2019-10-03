@@ -736,11 +736,16 @@ class PluginResourcesResource extends CommonDBTM {
 
       if (!isset ($input["is_template"])) {
 
-         $required = $this->checkRequiredFields($input);
+         if(!isset($input['force'])){
+            $required = $this->checkRequiredFields($input);
 
-         if (count($required) > 0) {
-            Session::addMessageAfterRedirect(__('Required fields are not filled. Please try again.', 'resources'), false, ERROR);
-            return [];
+            if (count($required) > 0) {
+               Session::addMessageAfterRedirect(__('Required fields are not filled. Please try again.', 'resources'), false, ERROR);
+               return [];
+            }
+         }
+         else{
+            unset($input['force']);
          }
       }
 
@@ -4281,9 +4286,14 @@ class PluginResourcesResource extends CommonDBTM {
       $query = "SELECT r.*";
       $from = "FROM " . self::getTable() . " as r";
       $join = "";
-      $where = "WHERE 1=1";
+      $where = 'WHERE 1=1';
 
       foreach ($identifiers as $identifier) {
+
+         if(is_string($identifier['value']) && empty($identifier['value'])){
+            $identifier['value'] = null;
+         }
+
          switch ($identifier['resource_column']) {
             case 10:
                $tableResourceImportCriterias[] = [
@@ -4392,12 +4402,15 @@ class PluginResourcesResource extends CommonDBTM {
    }
 
    function isDifferentFromImportResourceData($resourceID, $data) {
-      if (self::hasDifferenciesWithValueByDataNameID(
-         $resourceID, $data['resource_column'], $data['name'], $data['value']
-      )) {
-         return true;
-      }
-      return false;
+
+      $result = self::hasDifferenciesWithValueByDataNameID(
+         $resourceID,
+         $data['resource_column'],
+         $data['name'],
+         $data['value']
+      );
+
+      return $result;
    }
 
    /**
@@ -4513,7 +4526,10 @@ class PluginResourcesResource extends CommonDBTM {
 
             // When firstname and lastname
             if($dataNameID == 0 || $dataNameID == 1){
-               return strcasecmp($resourceValue, $value) != 0;
+
+               $result = strcasecmp($resourceValue, $value) == 0;
+
+               return !$result;
             }else{
                return $resourceValue != $value;
             }

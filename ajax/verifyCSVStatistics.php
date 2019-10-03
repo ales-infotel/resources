@@ -28,7 +28,7 @@
  */
 
 include('../../../inc/includes.php');
-header("Content-Type: application/json; charset=UTF-8");
+header('Content-Type: application/json');
 Html::header_nocache();
 
 Session::checkLoginUser();
@@ -39,10 +39,13 @@ if (isset($_GET['page']) && isset($_GET['file'])) {
 
    $absoluteFilePath = $pluginResourcesImportResource::getLocationOfVerificationFiles() . "/" . $_GET['file'];
 
-   $importId = $pluginResourcesImportResource->verifyFileHeader($absoluteFilePath);
+   $temp = $pluginResourcesImportResource->readCSVLines($absoluteFilePath, 0, 1);
+   $header = array_shift($temp);
+
+   $importId = $pluginResourcesImportResource->checkHeader($header);
 
    $listParams = $pluginResourcesImportResource->fillVerifyParams(
-      0,
+      1,
       INF,
       $_GET['page'],
       $absoluteFilePath,
